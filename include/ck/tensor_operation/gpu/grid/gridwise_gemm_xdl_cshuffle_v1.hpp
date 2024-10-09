@@ -613,9 +613,9 @@ struct GridwiseGemm_k0mk1_k0nk1_mn_xdl_cshuffle_v1
                                            1,
                                            CShuffleNXdlPerWavePerShuffle * NWave * NPerXdl>>{};
 
-            constexpr index_t num_access = sfc_c_vgpr.GetNumOfAccess();
+            constexpr index_t num_access = sfc_c_vgpr.GetNumOfAccess(); // MXdlPerWave * NXdlPerWave * M2 * M4 / ScalarPerVector
 
-            static_assert(num_access == sfc_c_global.GetNumOfAccess(), "wrong!");
+            static_assert(num_access == sfc_c_global.GetNumOfAccess(), "wrong!"); // MPerBlock * NPerBlock / ScalarPerVector
 
             static_for<0, num_access, 1>{}([&](auto access_id) {
                 // make sure it's safe to write to LDS

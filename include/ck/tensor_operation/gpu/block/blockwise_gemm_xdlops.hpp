@@ -108,6 +108,7 @@ struct BlockwiseGemmXdlops_k0mk1_k0nk1_m0n0m1n1m2m3m4n2_v1
 
         const auto xdlops_a_idx = xdlops_gemm.CalculateAThreadOriginDataIndex();
 
+        // is_k_reduction: (0, warp_m, lane_compute_blk_td(=32), KPerThread * lane_compute_blk_id(=2))
         return make_tuple(0, waveId_m, xdlops_a_idx[I1], KPerThread * xdlops_a_idx[I0]);
     }
 
@@ -390,6 +391,8 @@ struct BlockwiseGemmXdlops_k0mk1_k0nk1_m0n0m1n1m2m3m4n2_v1
                                                          B_K1,
                                                          B_K1>;
 
+    // a_block_desc_m0_m1_m2_k = (MRepeat=4, MWaves=2, MPerXDL=32, KPerBlock=64)
+    // AThreadOriginDataIndex = (0, MWaves=4, num_threads_per_blk=16, KPerThreads*num_input_blks=64)
     AThreadCopy a_thread_copy_{CalculateAThreadOriginDataIndex()};
     BThreadCopy b_thread_copy_{CalculateBThreadOriginDataIndex()};
 };

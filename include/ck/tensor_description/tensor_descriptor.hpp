@@ -4,6 +4,7 @@
 #pragma once
 
 #include "ck/utility/common_header.hpp"
+#include "ck/utility/container_helper.hpp"
 #include "ck/utility/sequence_helper.hpp"
 #include "ck/tensor_description/multi_index_transform.hpp"
 
@@ -349,20 +350,20 @@ transform_tensor_descriptor(const OldTensorDescriptor& old_tensor_desc,
                 [](auto low_dim_visible_id) constexpr {
                     return OldTensorDescriptor::GetVisibleDimensionIds()[low_dim_visible_id];
                 },
-                low_dim_visible_ids);
+                low_dim_visible_ids);   // S<2>; S<1>
         },
-        NewLowerDimensionOldVisibleIdss{});
+        NewLowerDimensionOldVisibleIdss{}); // T<2, 1>
 
-    constexpr index_t num_new_transform = NewTransforms::Size();
+    constexpr index_t num_new_transform = NewTransforms::Size();    // 2
 
     // upper dimension's hidden idss
-    constexpr index_t old_hidden_dim_number = OldTensorDescriptor::GetNumOfHiddenDimension();
+    constexpr index_t old_hidden_dim_number = OldTensorDescriptor::GetNumOfHiddenDimension();   // 3
 
     constexpr auto up_dim_numbers =
-        generate_sequence(lambda_get_up_dim_num<NewTransforms>{}, Number<num_new_transform>{});
+        generate_sequence(lambda_get_up_dim_num<NewTransforms>{}, Number<num_new_transform>{}); // S<2, 1>
 
     constexpr auto up_dim_numbers_scan = merge_sequences(
-        Sequence<0>{}, inclusive_scan_sequence(up_dim_numbers, math::plus<index_t>{}, Number<0>{}));
+        Sequence<0>{}, inclusive_scan_sequence(up_dim_numbers, math::plus<index_t>{}, Number<0>{}));    // S<0, 2, 3>
 
     constexpr auto up_dim_hidden_idss = generate_tuple(
         [ old_hidden_dim_number, up_dim_numbers_scan ](auto i) constexpr {
@@ -371,15 +372,15 @@ transform_tensor_descriptor(const OldTensorDescriptor& old_tensor_desc,
                                                  old_hidden_dim_number + up_dim_numbers_scan[i + 1],
                                                  1>::type{};
         },
-        Number<num_new_transform>{});
+        Number<num_new_transform>{});   // T<3, 4, 5>
 
     // new visible dimension's hidden ids
     constexpr auto unordered_new_visible_dim_hidden_ids = unpack(
-        [](auto... xs) constexpr { return merge_sequences(xs...); }, up_dim_hidden_idss);
+        [](auto... xs) constexpr { return merge_sequences(xs...); }, up_dim_hidden_idss);   // S<2, 3, 4>
 
     constexpr auto new_visible_dim_unordered2ordered = unpack(
         [](auto... xs) constexpr { return merge_sequences(xs...); },
-        NewUpperDimensionNewVisibleIdss{});
+        NewUpperDimensionNewVisibleIdss{}); // S<0, 2, 1>
 
     constexpr auto new_visible_dim_hidden_ids =
         unordered_new_visible_dim_hidden_ids.ReorderGivenOld2New(new_visible_dim_unordered2ordered);
@@ -396,9 +397,9 @@ transform_tensor_descriptor(const OldTensorDescriptor& old_tensor_desc,
     const auto element_space_size = old_tensor_desc.GetElementSpaceSize();
 
     return TensorDescriptor<remove_cv_t<decltype(all_transforms)>,
-                            remove_cv_t<decltype(all_low_dim_hidden_idss)>,
-                            remove_cv_t<decltype(all_up_dim_hidden_idss)>,
-                            remove_cv_t<decltype(new_visible_dim_hidden_ids)>,
+                            remove_cv_t<decltype(all_low_dim_hidden_idss)>,         // T<S<0>, S<2>, S<1>>
+                            remove_cv_t<decltype(all_up_dim_hidden_idss)>,          // T<S<1, 2>, S<3, 4>, S<5>>
+                            remove_cv_t<decltype(new_visible_dim_hidden_ids)>,      // S<3, 5, 4>
                             remove_cv_t<decltype(element_space_size)>>{all_transforms,
                                                                        element_space_size};
 }

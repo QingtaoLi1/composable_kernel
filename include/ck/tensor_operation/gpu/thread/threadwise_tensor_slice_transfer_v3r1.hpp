@@ -125,14 +125,15 @@ struct ThreadwiseTensorSliceTransfer_v3r1
         // scalar per access on each dim
         // TODO: don't use lambda_scalar_per_access
         constexpr auto src_scalar_per_access = generate_sequence(
-            detail::lambda_scalar_per_access<SrcVectorDim, SrcScalarPerVector>{}, Number<nDim>{});
+            detail::lambda_scalar_per_access<SrcVectorDim, SrcScalarPerVector>{}, Number<nDim>{}); // <1, 1, 8>
 
-        constexpr auto src_access_lengths = SliceLengths{} / src_scalar_per_access;
+        // SliceLengths = <AK0PerBlock, MPerBlock, AK1> / ThreadClusterLengths = <4, 256, 8> / <4, 64, 1> = <1, 4, 8>
+        constexpr auto src_access_lengths = SliceLengths{} / src_scalar_per_access; // <1, 4, 1>
 
-        constexpr auto src_dim_access_order = SrcDimAccessOrder{};
+        constexpr auto src_dim_access_order = SrcDimAccessOrder{};  // <1, 0, 2>
 
         constexpr auto ordered_src_access_lengths =
-            container_reorder_given_new2old(src_access_lengths, src_dim_access_order);
+            container_reorder_given_new2old(src_access_lengths, src_dim_access_order);  // <4, 1, 1>
 
         // make forward steps
         const auto src_forward_steps = generate_tuple(
@@ -145,7 +146,7 @@ struct ThreadwiseTensorSliceTransfer_v3r1
 
                 return make_tensor_coordinate_step(src_desc, forward_step_idx);
             },
-            Number<nDim>{});
+            Number<nDim>{});    // index diff between two consecutive accesses
 
         // make backward steps
         const auto src_backward_steps = generate_tuple(
@@ -189,7 +190,7 @@ struct ThreadwiseTensorSliceTransfer_v3r1
                     ordered_idx(i) = forward_sweep[i] ? ordered_src_access_idx[i]
                                                       : ordered_src_access_lengths[i] - 1 -
                                                             ordered_src_access_idx[i];
-                });
+                }); // ???
 
                 return container_reorder_given_old2new(ordered_idx, src_dim_access_order) *
                        src_scalar_per_access;
@@ -367,14 +368,14 @@ struct ThreadwiseTensorSliceTransfer_v3r1
         // src scalar per access on each dim
         // TODO: don't use this
         constexpr auto dst_scalar_per_access = generate_sequence(
-            detail::lambda_scalar_per_access<DstVectorDim, DstScalarPerVector>{}, Number<nDim>{});
+            detail::lambda_scalar_per_access<DstVectorDim, DstScalarPerVector>{}, Number<nDim>{});  // <1, 1, 8>
 
         constexpr auto dst_access_lengths = SliceLengths{} / dst_scalar_per_access;
 
         constexpr auto dst_dim_access_order = DstDimAccessOrder{};
 
         constexpr auto ordered_dst_access_lengths =
-            container_reorder_given_new2old(dst_access_lengths, dst_dim_access_order);
+            container_reorder_given_new2old(dst_access_lengths, dst_dim_access_order);  // <4, 1, 1>
 
         // make forward steps
         const auto dst_forward_steps = generate_tuple(
@@ -387,7 +388,7 @@ struct ThreadwiseTensorSliceTransfer_v3r1
 
                 return make_tensor_coordinate_step(dst_desc, forward_step_idx);
             },
-            Number<nDim>{});
+            Number<nDim>{});    // index diff between two consecutive accesses
 
         // make backward steps
         const auto dst_backward_steps = generate_tuple(
@@ -515,14 +516,15 @@ struct ThreadwiseTensorSliceTransfer_v3r1
         // scalar per access on each dim
         // TODO: don't use lambda_scalar_per_access
         constexpr auto src_scalar_per_access = generate_sequence(
-            detail::lambda_scalar_per_access<SrcVectorDim, SrcScalarPerVector>{}, Number<nDim>{});
+            detail::lambda_scalar_per_access<SrcVectorDim, SrcScalarPerVector>{}, Number<nDim>{}); // <1, 1, 8>
 
-        constexpr auto src_access_lengths = SliceLengths{} / src_scalar_per_access;
+        // SliceLengths = <AK0PerBlock, MPerBlock, AK1> / ThreadClusterLengths = <4, 256, 8> / <4, 64, 1> = <1, 4, 8>
+        constexpr auto src_access_lengths = SliceLengths{} / src_scalar_per_access; // <1, 4, 1>
 
-        constexpr auto src_dim_access_order = SrcDimAccessOrder{};
+        constexpr auto src_dim_access_order = SrcDimAccessOrder{};  // <1, 0, 2>
 
         constexpr auto ordered_src_access_lengths =
-            container_reorder_given_new2old(src_access_lengths, src_dim_access_order);
+            container_reorder_given_new2old(src_access_lengths, src_dim_access_order);  // <4, 1, 1>
 
         // judge move forward or move backward during the last iteration
         constexpr auto forward_sweep = [&]() {
@@ -659,12 +661,13 @@ struct ThreadwiseTensorSliceTransfer_v3r1
     __device__ static constexpr auto GetSrcThreadScratchDescriptor()
     {
         constexpr auto src_scalar_per_access = generate_sequence(
-            detail::lambda_scalar_per_access<SrcVectorDim, SrcScalarPerVector>{}, Number<nDim>{});
+            detail::lambda_scalar_per_access<SrcVectorDim, SrcScalarPerVector>{}, Number<nDim>{}); // <1, 1, 8>
 
-        constexpr auto src_access_lengths = SliceLengths{} / src_scalar_per_access;
+        // SliceLengths = <AK0PerBlock, MPerBlock, AK1> / ThreadClusterLengths = <4, 256, 8> / <4, 64, 1> = <1, 4, 8>
+        constexpr auto src_access_lengths = SliceLengths{} / src_scalar_per_access; // <1, 4, 1>
 
         constexpr auto src_access_lengths_and_vector_length = container_push_back(
-            sequence_to_tuple_of_number(src_access_lengths), Number<SrcScalarPerVector>{});
+            sequence_to_tuple_of_number(src_access_lengths), Number<SrcScalarPerVector>{}); // <1, 4, 1, 8>
 
         // 1st stage of transforms
         constexpr auto desc0 =

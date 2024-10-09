@@ -112,9 +112,11 @@ struct ThreadwiseTensorSliceTransfer_v1r3
         // TODO: don't use lambda_scalar_per_access
         constexpr auto dst_scalar_per_access = generate_sequence(
             detail::lambda_scalar_per_access<DstVectorDim, DstScalarPerVector>{}, Number<nDim>{});
+            // <1, 1, 1, ..., 1> (0~7)
 
         constexpr auto dst_scalar_step_in_vector =
             generate_sequence(detail::lambda_scalar_step_in_vector<DstVectorDim>{}, Number<nDim>{});
+            // <0, 0, ..., 0, 1> (0~7)
 
         using SpaceFillingCurve = SpaceFillingCurve<SliceLengths,
                                                     DimAccessOrder,
@@ -1107,12 +1109,12 @@ struct ThreadwiseTensorSliceTransfer_v4
             },
             Number<nDim>{});
 
-        constexpr auto access_lengths = SliceLengths{} / src_scalar_per_access;
+        constexpr auto access_lengths = SliceLengths{} / src_scalar_per_access; // <1, 1, 1, KPack> / <1, 1, 1, AK1>
 
-        constexpr auto dim_access_order = DimAccessOrder{};
+        constexpr auto dim_access_order = DimAccessOrder{}; // <0, 1, 2, 3>
 
         constexpr auto ordered_access_lengths =
-            container_reorder_given_new2old(access_lengths, dim_access_order);
+            container_reorder_given_new2old(access_lengths, dim_access_order);  // <1, 1, 1, KPack/AK1>
 
         static_ford<decltype(ordered_access_lengths)>{}([&](auto ordered_access_idx) {
 #if 0

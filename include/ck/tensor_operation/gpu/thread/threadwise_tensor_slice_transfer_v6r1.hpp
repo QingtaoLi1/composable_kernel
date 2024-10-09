@@ -77,9 +77,13 @@ struct ThreadwiseTensorSliceTransfer_v6r1
         // scalar per access on each dim
         // TODO: don't use lambda_scalar_per_access
         constexpr auto scalar_per_access = generate_sequence(
-            detail::lambda_scalar_per_access<VectorDim, ScalarPerVector>{}, Number<nDim>{});
+            detail::lambda_scalar_per_access<VectorDim, ScalarPerVector>{}, Number<nDim>{});    // <1, 1, 1, 8>
 
-        using SpaceFillingCurve = SpaceFillingCurve<SliceLengths,
+        using SpaceFillingCurve = SpaceFillingCurve<SliceLengths,   // (1,
+                                                                    //  CShuffleMXdlPerWavePerShuffle * MWave * MPerXdl,
+                                                                    //  1,
+                                                                    //  CShuffleNXdlPerWavePerShuffle * NWave * NPerXdl
+                                                                    // ) / CShuffleBlockTransferClusterLengths_MBlock_MPerBlock_NBlock_NPerBlock
                                                     DimAccessOrder,
                                                     remove_cv_t<decltype(scalar_per_access)>>;
 
